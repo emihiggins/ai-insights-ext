@@ -145,3 +145,6 @@ vite.config.ts.timestamp-*
 # Extension build artifacts
 dist-test/
 *.vsix
+
+# Local tooling
+.claude/

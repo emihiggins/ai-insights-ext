@@ -2,7 +2,7 @@
   "name": "claude-code-token-optimizer",
   "displayName": "Claude Code Token Optimizer",
   "description": "Analyzes local Claude Code session transcripts and recommends concrete ways to reduce token usage.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "side-quests",
   "author": "Emi Higgins",
   "license": "MIT",
