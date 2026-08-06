@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "outDir": "dist-test",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/parser.ts",
+    "src/model.ts",
+    "src/pricing.ts",
+    "src/aggregates.ts",
+    "src/discovery.ts",
+    "src/service.ts",
+    "src/savings.ts",
+    "src/trends.ts",
+    "src/detail.ts",
+    "src/rules/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

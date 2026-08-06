@@ -1,0 +1,102 @@
+{
+  "name": "claude-code-token-optimizer",
+  "displayName": "Claude Code Token Optimizer",
+  "description": "Analyzes local Claude Code session transcripts and recommends concrete ways to reduce token usage.",
+  "version": "0.1.0",
+  "publisher": "side-quests",
+  "author": "Emi Higgins",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/side-quests/claude-code-token-optimizer.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ccOptimizer",
+          "title": "CC Token Optimizer",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "ccOptimizer": [
+        {
+          "id": "ccOptimizer.dashboard",
+          "name": "Recommendations",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "ccOptimizer.refresh",
+        "title": "Claude Code Optimizer: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ccOptimizer.openDashboard",
+        "title": "Claude Code Optimizer: Open Recommendations"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "ccOptimizer.refresh",
+          "when": "view == ccOptimizer.dashboard",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Claude Code Token Optimizer",
+      "properties": {
+        "ccOptimizer.claudeHome": {
+          "type": "string",
+          "default": "",
+          "description": "Override the Claude home directory. Defaults to ~/.claude when empty."
+        },
+        "ccOptimizer.largeSearchOutputBytes": {
+          "type": "number",
+          "default": 20000,
+          "description": "A Bash search whose combined output exceeds this many characters is flagged as a large/broad search."
+        },
+        "ccOptimizer.lowCacheRatioThreshold": {
+          "type": "number",
+          "default": 0.5,
+          "description": "Sessions with a cache-read ratio below this (and enough turns) are flagged for a likely cache invalidator."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build -- --minify",
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "build:test": "tsc -p tsconfig.test.json",
+    "test": "npm run typecheck && npm run build:test && node --test dist-test/test/*.test.js",
+    "package": "vsce package --no-dependencies -o claude-code-token-optimizer.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.0",
+    "chart.js": "^4.4.0",
+    "chokidar": "^3.6.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0"
+  }
+}
