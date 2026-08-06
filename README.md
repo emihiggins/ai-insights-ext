@@ -6,6 +6,16 @@ Everything runs locally — it only reads the JSONL transcripts Claude Code alre
 
 > v1 covers **Claude Code only**. GitHub Copilot's local session files don't record token counts (that data lives server-side), so Copilot analysis is intentionally out of scope for now.
 
+## Screenshots
+
+**Overview — potential savings, common mistakes, and efficiency over time:**
+
+![Dashboard overview](media/screenshots/dashboard-overview.png)
+
+**Per-session recommendations, tool usage, and most expensive sessions:**
+
+![Recommendations and tool usage](media/screenshots/recommendations.png)
+
 ## What it detects
 
 The recommendations engine flags, each from a real transcript trigger with an explicit token/cost estimate:
@@ -45,7 +55,11 @@ Costs are **estimates** (Claude Code's local stats report `costUSD: 0`). Rates a
 
 ## Install
 
-Grab the packaged extension and install it into VS Code:
+**From the VS Code Marketplace** (recommended):
+
+Search for **Claude Code Token Optimizer** in the Extensions view, or install from the [Marketplace listing](https://marketplace.visualstudio.com/items?itemName=side-quests.claude-code-token-optimizer).
+
+**From source:**
 
 ```bash
 npm install
@@ -53,7 +67,7 @@ npm run package     # produces claude-code-token-optimizer.vsix
 code --install-extension claude-code-token-optimizer.vsix
 ```
 
-Then reload VS Code and open the **CC Token Optimizer** view in the Activity Bar. (You can also install via the Extensions view → "…" menu → *Install from VSIX…*.) The `.vsix` is self-contained — `chokidar` and Chart.js are bundled at build time, so no runtime `node_modules` ship with it.
+Reload VS Code and open the **CC Token Optimizer** view in the Activity Bar. (You can also install a `.vsix` via the Extensions view → "…" menu → *Install from VSIX…*.) The `.vsix` is self-contained — `chokidar` and Chart.js are bundled at build time, so no runtime `node_modules` ship with it.
 
 ## Develop / run
 
@@ -65,8 +79,6 @@ npm run package     # build a .vsix (runs the minified prepublish build)
 ```
 
 Press **F5** in VS Code to launch the Extension Development Host, then open the **CC Token Optimizer** view in the Activity Bar. The dashboard populates from `~/.claude/projects/` and refreshes automatically as Claude Code appends to transcripts.
-
-> Before publishing to a marketplace, update the `publisher` and `repository` fields in `package.json` to your own — the current values are placeholders for local packaging.
 
 ## Settings
 
