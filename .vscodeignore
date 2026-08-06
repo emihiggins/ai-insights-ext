@@ -8,12 +8,14 @@ esbuild.mjs
 tsconfig.json
 tsconfig.test.json
 
-# Editor / VCS
+# Editor / VCS / tooling
 .vscode/**
 .vscode-test/**
 .git/**
 .gitignore
 .github/**
+.claude/**
+.vscodeignore
 
 # Dependency and lock files (bundled by esbuild)
 node_modules/**
