@@ -1,0 +1,30 @@
+# Source and tests — dist/ is the shipped output
+src/**
+test/**
+dist-test/**
+
+# Build config
+esbuild.mjs
+tsconfig.json
+tsconfig.test.json
+
+# Editor / VCS
+.vscode/**
+.vscode-test/**
+.git/**
+.gitignore
+.github/**
+
+# Dependency and lock files (bundled by esbuild)
+node_modules/**
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Prior packages
+*.vsix
+
+# Source maps
+**/*.map
+**/*.ts
+!dist/**/*.d.ts

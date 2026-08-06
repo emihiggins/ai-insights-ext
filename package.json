@@ -6,9 +6,10 @@
   "publisher": "side-quests",
   "author": "Emi Higgins",
   "license": "MIT",
+  "icon": "media/logo.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/side-quests/claude-code-token-optimizer.git"
+    "url": "https://github.com/emihiggins/ai-insights-ext.git"
   },
   "engines": {
     "vscode": "^1.90.0"
