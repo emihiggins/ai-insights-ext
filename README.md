@@ -8,13 +8,23 @@ Everything runs locally — it only reads the JSONL transcripts Claude Code alre
 
 ## Screenshots
 
-**Overview — potential savings, common mistakes, and efficiency over time:**
+*Screenshots use synthetic demo data.*
+
+**Overview — filters, regression alerts, potential savings, and efficiency over time:**
 
 ![Dashboard overview](media/screenshots/dashboard-overview.png)
 
-**Per-session recommendations, tool usage, and most expensive sessions:**
+**Recommendations grouped by category, with snooze and dismiss:**
 
-![Recommendations and tool usage](media/screenshots/recommendations.png)
+![Grouped recommendations](media/screenshots/recommendations.png)
+
+**Tool usage and the most expensive sessions, by title:**
+
+![Tool usage and sessions](media/screenshots/sessions.png)
+
+**Per-session drill-down:**
+
+![Session drill-down](media/screenshots/session-detail.png)
 
 ## What it detects
 
@@ -60,7 +70,7 @@ To avoid false alarms, regressions only fire when **both** comparison windows ha
 
 ### Per-session drill-down
 
-Click **Details** on any row in the *most expensive sessions* table (or on any finding) to open a drill-down for that one session — parsed on demand, so the main payload stays small. It shows a **tokens-per-turn** stacked bar chart (input / output / cache-read / cache-write) with compaction points marked, a **compaction-events** list, and the **most expensive tool calls** ranked by token footprint with their exact target (the command, or the file path) and error/interrupt badges. This is the "where did this $175 session actually go?" view — it typically points straight at a handful of oversized reads or searches.
+Click a session's name in the *most expensive sessions* table (or **Details** on any finding) to open a drill-down for that one session — parsed on demand, so the main payload stays small. It shows a **tokens-per-turn** stacked bar chart (input / output / cache-read / cache-write) with compaction points marked, a **compaction-events** list, and the **most expensive tool calls** ranked by token footprint with their exact target (the command, or the file path) and error/interrupt badges. This is the "where did this $175 session actually go?" view — it typically points straight at a handful of oversized reads or searches.
 
 > The numbers are honest: on an already-efficient setup (high cache-read ratio), recoverable waste can legitimately be a small fraction of spend even when the behavioral patterns (broad searches, repeated reads) are worth changing.
 

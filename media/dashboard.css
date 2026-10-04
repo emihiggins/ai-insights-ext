@@ -372,7 +372,7 @@ table.sessions td {
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 table.sessions td.proj {
-  max-width: 160px;
+  max-width: 0; /* let the name column absorb the remaining width and ellipsize */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -386,9 +386,19 @@ table.sessions .ssub {
   font-size: 0.85em;
   color: var(--vscode-descriptionForeground);
 }
-table.sessions td.actions button {
-  display: block;
+table.sessions th,
+table.sessions td.num {
   white-space: nowrap;
+}
+table.sessions td.proj {
+  width: 100%;
+}
+button.sname-link {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
 }
 canvas {
   max-width: 100%;

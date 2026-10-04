@@ -249,7 +249,7 @@ function render(payload: DashboardPayload): void {
     <section>
       <h3>Most expensive sessions</h3>
       <table class="sessions"><thead><tr>
-        <th scope="col">Session</th><th scope="col">Model</th><th scope="col">Turns</th><th scope="col">Cache</th><th scope="col">Compact</th><th scope="col">Est. $</th><th scope="col"><span class="sr-only">Actions</span></th>
+        <th scope="col">Session</th><th scope="col">Model</th><th scope="col">Turns</th><th scope="col">Cache</th><th scope="col" title="Compactions">Cmp</th><th scope="col">Est. $</th>
       </tr></thead><tbody>
         ${a.sessions.slice(0, 15).map((s) => sessionRow(s, payload)).join("")}
       </tbody></table>
@@ -416,23 +416,23 @@ function findingCard(f: Finding, payload: DashboardPayload): string {
 
 function sessionRow(s: SessionSummary, payload: DashboardPayload): string {
   const file = payload.sessionFiles[s.sessionId];
-  const actions = file
-    ? `<button class="link" data-action="detail" data-file="${esc(file)}">Details</button>` +
-      `<button class="link" data-action="raw" data-file="${esc(file)}">Raw ↗</button>`
-    : "";
   const project = projectLabel(payload, s.project);
   const name = s.title ?? project;
+  // The name opens the drill-down (which links to the raw transcript), so the
+  // table needs no separate actions column in a narrow sidebar.
+  const label = `${s.parentSessionId ? `<span class="badge">subagent</span> ` : ""}${esc(name)}`;
   return `<tr>
     <td class="proj" title="${esc(name)}">
-      <div class="sname">${s.parentSessionId ? `<span class="badge">subagent</span> ` : ""}${esc(name)}</div>
+      <div class="sname">${
+        file ? `<button class="link sname-link" data-action="detail" data-file="${esc(file)}">${label}</button>` : label
+      }</div>
       ${s.title ? `<div class="ssub">${esc(project)}</div>` : ""}
     </td>
-    <td title="${esc(s.model ?? "")}">${esc(modelLabel(s.model))}</td>
-    <td>${fmt(s.turns)}</td>
-    <td>${pct(s.cacheReadRatio)}</td>
-    <td>${fmt(s.compactions)}</td>
-    <td>${money(s.costUSD)}</td>
-    <td class="actions">${actions}</td>
+    <td class="num" title="${esc(s.model ?? "")}">${esc(modelLabel(s.model))}</td>
+    <td class="num">${fmt(s.turns)}</td>
+    <td class="num">${pct(s.cacheReadRatio)}</td>
+    <td class="num">${fmt(s.compactions)}</td>
+    <td class="num">${money(s.costUSD)}</td>
   </tr>`;
 }
 

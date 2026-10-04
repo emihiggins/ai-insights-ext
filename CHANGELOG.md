@@ -33,6 +33,7 @@ Dashboard.
 - **Filters:** range (today / 7 / 30 days / all) and project, defaulting to the current workspace's project.
 - **Grouped findings** by category, collapsible, with *Show more*, plus snooze (7 days) and dismiss with restore-all.
 - **Readable names:** project folder names, session titles and short model names.
+- **Sessions table fits the sidebar:** click a session's name to open its drill-down, which links to the raw transcript.
 - **Open in editor** as a full-width tab.
 - **Theme-aware charts**, keyboard-accessible buttons, and a less spammy error popup with an output-channel log.
 - **Live updates** keep scroll position and an open drill-down. Hidden views catch up when shown, and only changed transcripts are re-parsed.
