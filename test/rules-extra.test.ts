@@ -63,11 +63,11 @@ test("redundant inspection command repeated 3x is flagged (but test re-runs are 
   assert.equal(has(runAllRules([s2], CONFIG).findings, "redundant.command"), false);
 });
 
-test("reading a file after editing it is flagged", () => {
+test("reading a file after writing it is flagged", () => {
   const s = session(
     "readafteredit",
     jsonl(
-      assistantLine({ usage: { input: 1 }, toolUses: [{ id: "w1", name: "Edit", input: { file_path: "/app/a.ts" } }] }),
+      assistantLine({ usage: { input: 1 }, toolUses: [{ id: "w1", name: "Write", input: { file_path: "/app/a.ts" } }] }),
       readResultLine("w1", "edited"),
       assistantLine({ usage: { input: 1 }, toolUses: [{ id: "r1", name: "Read", input: { file_path: "/app/a.ts" } }] }),
       readResultLine("r1", "z".repeat(2000))
@@ -77,13 +77,13 @@ test("reading a file after editing it is flagged", () => {
   assert.ok(has(res.oneOffs, "read.afteredit"));
 });
 
-test("read BEFORE edit is not flagged (ordering matters)", () => {
+test("read BEFORE write is not flagged (ordering matters)", () => {
   const s = session(
     "readbeforeedit",
     jsonl(
       assistantLine({ usage: { input: 1 }, toolUses: [{ id: "r1", name: "Read", input: { file_path: "/app/a.ts" } }] }),
       readResultLine("r1", "z".repeat(2000)),
-      assistantLine({ usage: { input: 1 }, toolUses: [{ id: "w1", name: "Edit", input: { file_path: "/app/a.ts" } }] }),
+      assistantLine({ usage: { input: 1 }, toolUses: [{ id: "w1", name: "Write", input: { file_path: "/app/a.ts" } }] }),
       readResultLine("w1", "edited")
     )
   );

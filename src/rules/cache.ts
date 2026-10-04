@@ -2,11 +2,11 @@
  * Rule: low cache-hit ratio. A session that writes a lot of cache but reads
  * little back — despite many turns — is a strong sign of a silent cache
  * invalidator (volatile content early in the prefix, a changing tool set).
- * Cache writes cost 1.25x input vs 0.1x for reads, so the gap is real money.
+ * Cache writes cost 1.25x input vs ~0.1x (or less) for reads, so the gap is real money.
  */
 import type { Finding, RuleContext } from "./index";
 import { cacheReadRatio } from "../aggregates";
-import { costOfInputTokens, CACHE_WRITE_5M_MULTIPLIER, CACHE_READ_MULTIPLIER } from "../pricing";
+import { CACHE_WRITE_5M_MULTIPLIER, CACHE_WRITE_1H_MULTIPLIER } from "../pricing";
 
 const MIN_TURNS = 5;
 const MIN_CACHE_CREATE = 20000; // ignore tiny sessions where the ratio is noise
@@ -23,9 +23,13 @@ export function cacheRule(ctx: RuleContext): Finding[] {
       continue;
     }
     const rate = ctx.rateFor(s);
-    // Extra cost of writing cache that never got read back (write premium over read).
-    const premium = CACHE_WRITE_5M_MULTIPLIER - CACHE_READ_MULTIPLIER;
-    const wastedUSD = costOfInputTokens(s.totals.cacheCreate, rate) * premium;
+    // Extra cost of writing cache that never got read back (write premium over
+    // read), split by TTL since 1-hour writes cost 2x input instead of 1.25x.
+    const write1h = Math.min(s.totals.ephemeral1h, s.totals.cacheCreate);
+    const write5m = s.totals.cacheCreate - write1h;
+    const wastedUSD =
+      (write5m / 1_000_000) * (rate.input * CACHE_WRITE_5M_MULTIPLIER - rate.cacheRead) +
+      (write1h / 1_000_000) * (rate.input * CACHE_WRITE_1H_MULTIPLIER - rate.cacheRead);
     findings.push({
       ruleId: "cache.lowratio",
       category: "Low cache reuse",

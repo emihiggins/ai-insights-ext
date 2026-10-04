@@ -5,10 +5,8 @@
  */
 import type { SessionModel, TokenTotals } from "./model";
 import { primaryModel } from "./model";
-import { rateForModel, estimateCost, costOfInputTokens } from "./pricing";
+import { rateForModel, costOfInputTokens, turnCost } from "./pricing";
 import { cacheReadRatio } from "./aggregates";
-
-const CHARS_PER_TOKEN = 4;
 
 export interface TurnDetail {
   index: number;
@@ -47,6 +45,10 @@ export interface CompactionMarker {
 export interface SessionDetail {
   sessionId: string;
   project: string;
+  title?: string;
+  parentSessionId?: string;
+  /** Calibrated characters per token used for the tool-output estimates. */
+  charsPerToken: number;
   filePath: string;
   model?: string;
   firstTs?: string;
@@ -80,12 +82,12 @@ export function buildSessionDetail(session: SessionModel, topN = 15): SessionDet
     cacheRead: t.usage.cacheRead,
     cacheCreate: t.usage.cacheCreate,
     promptTokens: t.usage.input + t.usage.cacheRead + t.usage.cacheCreate,
-    costUSD: estimateCost(t.usage, rate),
+    costUSD: turnCost(t),
   }));
 
   const tools: ToolDetail[] = session.toolCalls.map((c) => {
     const resultChars = c.resultChars ?? 0;
-    const estTokens = Math.round(resultChars / CHARS_PER_TOKEN);
+    const estTokens = Math.round(resultChars / session.charsPerToken);
     return {
       id: c.id,
       name: c.name,
@@ -122,6 +124,9 @@ export function buildSessionDetail(session: SessionModel, topN = 15): SessionDet
   return {
     sessionId: session.sessionId,
     project: session.project,
+    title: session.title,
+    parentSessionId: session.parentSessionId,
+    charsPerToken: session.charsPerToken,
     filePath: session.filePath,
     model: primaryModel(session),
     firstTs: session.firstTs,

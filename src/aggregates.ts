@@ -4,7 +4,7 @@
  */
 import type { SessionModel, TokenTotals } from "./model";
 import { primaryModel } from "./model";
-import { rateForModel, estimateCost, sessionCost } from "./pricing";
+import { sessionCost, turnCost, contextWindowForModel } from "./pricing";
 
 /** Fraction of billed input served from cache: read / (read + create + input). */
 export function cacheReadRatio(t: TokenTotals): number {
@@ -25,6 +25,12 @@ export interface SessionSummary {
   sessionId: string;
   project: string;
   model?: string;
+  /** Set for subagent transcripts: the session that spawned this agent. */
+  parentSessionId?: string;
+  title?: string;
+  /** Prompt size of the latest turn — how full the context is now. */
+  lastPromptTokens: number;
+  contextWindow: number;
   turns: number;
   totals: TokenTotals;
   costUSD: number;
@@ -35,7 +41,9 @@ export interface SessionSummary {
 }
 
 export interface DashboardAggregates {
+  /** Top-level sessions; subagent transcripts are counted in subagentCount. */
   sessionCount: number;
+  subagentCount: number;
   totals: TokenTotals;
   totalCostUSD: number;
   cacheReadRatio: number;
@@ -55,11 +63,20 @@ function dateOf(ts: string | undefined): string | undefined {
   return idx > 0 ? ts.slice(0, idx) : undefined;
 }
 
+function lastPromptTokens(session: SessionModel): number {
+  const last = session.turns[session.turns.length - 1];
+  return last ? last.usage.input + last.usage.cacheRead + last.usage.cacheCreate : 0;
+}
+
 export function summarizeSession(session: SessionModel): SessionSummary {
   return {
     sessionId: session.sessionId,
     project: session.project,
     model: primaryModel(session),
+    parentSessionId: session.parentSessionId,
+    title: session.title,
+    lastPromptTokens: lastPromptTokens(session),
+    contextWindow: contextWindowForModel(primaryModel(session)),
     turns: session.turns.length,
     totals: session.totals,
     costUSD: sessionCost(session),
@@ -103,7 +120,6 @@ export function computeAggregates(sessions: SessionModel[]): DashboardAggregates
       toolCounts[call.name] = (toolCounts[call.name] ?? 0) + 1;
     }
 
-    const rate = rateForModel(primaryModel(s));
     for (const turn of s.turns) {
       const day = dateOf(turn.timestamp);
       if (!day) {
@@ -118,7 +134,7 @@ export function computeAggregates(sessions: SessionModel[]): DashboardAggregates
       point.output += turn.usage.output;
       point.cacheRead += turn.usage.cacheRead;
       point.cacheCreate += turn.usage.cacheCreate;
-      point.costUSD += estimateCost(turn.usage, rate);
+      point.costUSD += turnCost(turn);
     }
 
     summaries.push(summarizeSession(s));
@@ -128,7 +144,8 @@ export function computeAggregates(sessions: SessionModel[]): DashboardAggregates
   summaries.sort((a, b) => b.costUSD - a.costUSD);
 
   return {
-    sessionCount: sessions.length,
+    sessionCount: sessions.filter((s) => !s.parentSessionId).length,
+    subagentCount: sessions.filter((s) => s.parentSessionId).length,
     totals,
     totalCostUSD,
     cacheReadRatio: cacheReadRatio(totals),

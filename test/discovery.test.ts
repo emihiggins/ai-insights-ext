@@ -6,7 +6,7 @@ import * as os from "os";
 import * as path from "path";
 import { discoverTranscripts, loadAllSessions, resolveClaudeHome, projectsDir } from "../src/discovery";
 import { readTranscript } from "../src/parser";
-import { analyze } from "../src/service";
+import { analyze, loadSessionDetail } from "../src/service";
 import { DEFAULT_RULE_CONFIG } from "../src/rules/index";
 import { assistantLine, bashResultLine, compactBoundaryLine, jsonl } from "./fixtures";
 
@@ -56,7 +56,7 @@ test("discovers transcripts and streams them", async () => {
 test("analyze() produces aggregates and findings end-to-end", async () => {
   const home = await makeClaudeHome();
   try {
-    const payload = await analyze(home, DEFAULT_RULE_CONFIG);
+    const { payload } = await analyze(home, DEFAULT_RULE_CONFIG);
     assert.equal(payload.found, true);
     assert.equal(payload.aggregates.sessionCount, 1);
     assert.equal(payload.aggregates.totals.input, 2);
@@ -77,8 +77,72 @@ test("missing projects dir yields empty result, not an error", async () => {
     assert.equal(fs.existsSync(projectsDir(home)), false);
     const sessions = await loadAllSessions(home);
     assert.equal(sessions.length, 0);
-    const payload = await analyze(home, DEFAULT_RULE_CONFIG);
+    const { payload } = await analyze(home, DEFAULT_RULE_CONFIG);
     assert.equal(payload.found, false);
+  } finally {
+    await fsp.rm(home, { recursive: true, force: true });
+  }
+});
+
+const PARENT_ID = "22222222-2222-2222-2222-222222222222";
+
+async function makeClaudeHomeWithSubagent(): Promise<string> {
+  const home = await fsp.mkdtemp(path.join(os.tmpdir(), "cc-opt-sub-"));
+  const proj = path.join(projectsDir(home), "-Users-me-app");
+  const subagents = path.join(proj, PARENT_ID, "subagents");
+  await fsp.mkdir(subagents, { recursive: true });
+  await fsp.writeFile(
+    path.join(proj, `${PARENT_ID}.jsonl`),
+    jsonl(assistantLine({ model: "claude-opus-5-5", usage: { input: 1_000_000 } }))
+  );
+  await fsp.writeFile(
+    path.join(subagents, "agent-abc123.jsonl"),
+    jsonl(assistantLine({ model: "claude-haiku-4-5", usage: { input: 1_000_000 } }))
+  );
+  await fsp.writeFile(path.join(subagents, "agent-abc123.meta.json"), JSON.stringify({ agentType: "Explore" }));
+  return home;
+}
+
+test("discovers subagent transcripts and links them to their parent", async () => {
+  const home = await makeClaudeHomeWithSubagent();
+  try {
+    const ts = await discoverTranscripts(home);
+    assert.equal(ts.length, 2);
+    const sub = ts.find((t) => t.sessionId === "agent-abc123");
+    assert.ok(sub, "subagent transcript discovered");
+    assert.equal(sub!.parentSessionId, PARENT_ID);
+    assert.equal(sub!.project, "-Users-me-app");
+    assert.equal(ts.find((t) => t.sessionId === PARENT_ID)!.parentSessionId, undefined);
+  } finally {
+    await fsp.rm(home, { recursive: true, force: true });
+  }
+});
+
+test("analyze() includes subagent cost but counts only top-level sessions", async () => {
+  const home = await makeClaudeHomeWithSubagent();
+  try {
+    const { payload } = await analyze(home, DEFAULT_RULE_CONFIG);
+    assert.equal(payload.aggregates.sessionCount, 1);
+    assert.equal(payload.aggregates.subagentCount, 1);
+    // Opus 5.5 $4 + Haiku 4.5 $1.
+    assert.equal(payload.aggregates.totalCostUSD, 5);
+    const sub = payload.aggregates.sessions.find((s) => s.sessionId === "agent-abc123");
+    assert.equal(sub?.parentSessionId, PARENT_ID);
+    // Both days' trend buckets count one active session, not two.
+    assert.equal(payload.trends.series[0].activeSessions, 1);
+  } finally {
+    await fsp.rm(home, { recursive: true, force: true });
+  }
+});
+
+test("loadSessionDetail resolves the project for a subagent transcript", async () => {
+  const home = await makeClaudeHomeWithSubagent();
+  try {
+    const file = path.join(projectsDir(home), "-Users-me-app", PARENT_ID, "subagents", "agent-abc123.jsonl");
+    const detail = await loadSessionDetail(file);
+    assert.equal(detail.project, "-Users-me-app");
+    assert.equal(detail.sessionId, "agent-abc123");
+    assert.equal(detail.costUSD, 1);
   } finally {
     await fsp.rm(home, { recursive: true, force: true });
   }

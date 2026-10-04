@@ -78,6 +78,17 @@ test("low cache ratio rule fires on a many-turn session with poor reuse", () => 
   assert.ok(has(res.oneOffs, "cache.lowratio"), "low-cache finding present");
 });
 
+test("low cache ratio waste uses the model's own cache-read price", () => {
+  // 5 turns x 200k cache writes = 1M written. Opus 5.5: $4 x 1.25 write - $0.20 read = $4.80.
+  const turns = Array.from({ length: 5 }, () =>
+    assistantLine({ model: "claude-opus-5-5", usage: { input: 500, output: 30, cacheCreate: 200_000, cacheRead: 1000 } })
+  );
+  const res = runAllRules([session("cache55", jsonl(...turns))], CONFIG);
+  const finding = res.oneOffs.find((f) => f.ruleId === "cache.lowratio");
+  assert.ok(finding, "low-cache finding present");
+  assert.ok(Math.abs((finding!.wastedUSD ?? 0) - 4.8) < 1e-9, `got ${finding!.wastedUSD}`);
+});
+
 test("prompt-length habit fires on repeated high-input / low-output turns", () => {
   const turns = Array.from({ length: 4 }, () => assistantLine({ usage: { input: 20000, output: 10 } }));
   const s = session("roundtrips", jsonl(...turns));

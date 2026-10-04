@@ -7,6 +7,7 @@ export interface UsageInput {
   cacheRead?: number;
   eph5m?: number;
   eph1h?: number;
+  speed?: string;
 }
 
 let seq = 0;
@@ -20,9 +21,14 @@ export function assistantLine(opts: {
   timestamp?: string;
   usage?: UsageInput;
   toolUses?: Array<{ id: string; name: string; input: Record<string, unknown> }>;
+  /** Reuse an id to emit another content-block line of the same response. */
+  messageId?: string;
+  requestId?: string;
+  /** Omit the leading text block (later block lines carry only their block). */
+  noText?: boolean;
 }): string {
   const u = opts.usage ?? {};
-  const content: unknown[] = [{ type: "text", text: "ok" }];
+  const content: unknown[] = opts.noText ? [] : [{ type: "text", text: "ok" }];
   for (const t of opts.toolUses ?? []) {
     content.push({ type: "tool_use", id: t.id, name: t.name, input: t.input });
   }
@@ -33,8 +39,9 @@ export function assistantLine(opts: {
     cwd: "/Users/me/app",
     version: "2.1.220",
     gitBranch: "HEAD",
+    requestId: opts.requestId ?? uid("req"),
     message: {
-      id: uid("msg"),
+      id: opts.messageId ?? uid("msg"),
       role: "assistant",
       model: opts.model ?? "claude-opus-4-8",
       content,
@@ -47,6 +54,7 @@ export function assistantLine(opts: {
           ephemeral_5m_input_tokens: u.eph5m ?? 0,
           ephemeral_1h_input_tokens: u.eph1h ?? 0,
         },
+        ...(u.speed ? { speed: u.speed } : {}),
       },
     },
   });
@@ -110,4 +118,18 @@ export function compactBoundaryLine(pre: number, post: number, dropped: number):
 
 export function jsonl(...lines: string[]): string {
   return lines.join("\n") + "\n";
+}
+
+/** A Bash result Claude Code persisted to disk: the model saw only a preview. */
+export function persistedBashResultLine(toolUseId: string, fullStdout: string, preview: string): string {
+  return JSON.stringify({
+    type: "user",
+    uuid: uid("u"),
+    timestamp: "2026-07-29T23:21:54.000Z",
+    message: {
+      role: "user",
+      content: [{ type: "tool_result", tool_use_id: toolUseId, content: `<persisted-output>\n${preview}\n</persisted-output>` }],
+    },
+    toolUseResult: { stdout: fullStdout, stderr: "", interrupted: false, isImage: false },
+  });
 }
