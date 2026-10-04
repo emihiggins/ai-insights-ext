@@ -7,8 +7,7 @@
  * same length. Pure logic — no vscode.
  */
 import type { SessionModel } from "./model";
-import { primaryModel } from "./model";
-import { rateForModel, estimateCost } from "./pricing";
+import { turnCost } from "./pricing";
 
 export interface DailyMetric {
   date: string; // YYYY-MM-DD (UTC)
@@ -91,7 +90,8 @@ export function computeDailySeries(sessions: SessionModel[]): DailyMetric[] {
   };
 
   for (const s of sessions) {
-    const rate = rateForModel(primaryModel(s));
+    // Subagent work counts toward its parent session, not as a new session.
+    const countedSessionId = s.parentSessionId ?? s.sessionId;
     for (const turn of s.turns) {
       const date = dateOf(turn.timestamp);
       if (!date) {
@@ -102,8 +102,8 @@ export function computeDailySeries(sessions: SessionModel[]): DailyMetric[] {
       b.output += turn.usage.output;
       b.cacheRead += turn.usage.cacheRead;
       b.cacheCreate += turn.usage.cacheCreate;
-      b.costUSD += estimateCost(turn.usage, rate);
-      b.sessionIds.add(s.sessionId);
+      b.costUSD += turnCost(turn);
+      b.sessionIds.add(countedSessionId);
     }
     for (const c of s.compactions) {
       const date = dateOf(c.timestamp);

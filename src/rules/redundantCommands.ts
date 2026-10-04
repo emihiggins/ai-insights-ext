@@ -43,10 +43,11 @@ export function redundantCommandsRule(ctx: RuleContext): Finding[] {
         continue;
       }
       const repeatChars = rec.count > 0 ? Math.round(rec.totalChars * ((rec.count - 1) / rec.count)) : 0;
-      const estTokens = estTokensFromChars(repeatChars);
+      const estTokens = estTokensFromChars(repeatChars, s.charsPerToken);
       const short = command.length > 100 ? command.slice(0, 97) + "…" : command;
       findings.push({
         ruleId: "redundant.command",
+        key: `redundant.command|${s.sessionId}|${command}`,
         category: "Redundant command",
         title: `Same inspection command run ${rec.count}× in one session`,
         detail:

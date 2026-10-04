@@ -23,7 +23,7 @@ export function failedToolsRule(ctx: RuleContext): Finding[] {
       continue;
     }
     const chars = failed.reduce((sum, c) => sum + (c.resultChars ?? 0), 0);
-    const estTokens = estTokensFromChars(chars);
+    const estTokens = estTokensFromChars(chars, s.charsPerToken);
     totalFailures += failed.length;
     totalWastedTokens += estTokens;
 

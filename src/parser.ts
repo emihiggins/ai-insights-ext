@@ -19,6 +19,8 @@ export interface Usage {
     ephemeral_5m_input_tokens?: number;
     ephemeral_1h_input_tokens?: number;
   };
+  /** "standard" or "fast" — fast mode bills at premium rates. */
+  speed?: string;
   // `iterations[]` intentionally ignored — it restates the same totals.
 }
 
@@ -63,6 +65,8 @@ export interface AssistantLine {
   gitBranch?: string;
   version?: string;
   isSidechain?: boolean;
+  /** API request id; with `message.id`, identifies one billed response. */
+  requestId?: string;
   message?: {
     id?: string;
     role?: string;

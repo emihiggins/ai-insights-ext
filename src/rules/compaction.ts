@@ -20,6 +20,7 @@ export function compactionRule(ctx: RuleContext): Finding[] {
       const reprimeUSD = costOfInputTokens(c.postTokens, rate) * CACHE_WRITE_5M_MULTIPLIER;
       findings.push({
         ruleId: "compaction",
+        key: `compaction|${s.sessionId}|${c.timestamp ?? c.preTokens}`,
         category: "Context compaction",
         title: `Context compaction dropped ${fmt(c.droppedTokens)} tokens`,
         detail:

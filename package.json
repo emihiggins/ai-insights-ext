@@ -2,7 +2,7 @@
   "name": "claude-code-token-optimizer",
   "displayName": "Claude Code Token Optimizer",
   "description": "Analyzes local Claude Code session transcripts and recommends concrete ways to reduce token usage.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "side-quests",
   "author": "Emi Higgins",
   "license": "MIT",
@@ -50,12 +50,22 @@
       {
         "command": "ccOptimizer.openDashboard",
         "title": "Claude Code Optimizer: Open Recommendations"
+      },
+      {
+        "command": "ccOptimizer.openInEditor",
+        "title": "Claude Code Optimizer: Open Dashboard in Editor",
+        "icon": "$(link-external)"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "ccOptimizer.refresh",
+          "when": "view == ccOptimizer.dashboard",
+          "group": "navigation"
+        },
+        {
+          "command": "ccOptimizer.openInEditor",
           "when": "view == ccOptimizer.dashboard",
           "group": "navigation"
         }
@@ -76,8 +86,8 @@
         },
         "ccOptimizer.lowCacheRatioThreshold": {
           "type": "number",
-          "default": 0.5,
-          "description": "Sessions with a cache-read ratio below this (and enough turns) are flagged for a likely cache invalidator."
+          "default": 0.8,
+          "description": "Sessions with a cache-read ratio below this (and enough turns) are flagged for a likely cache invalidator. Healthy Claude Code sessions usually reuse 90%+ of their input from cache."
         }
       }
     }

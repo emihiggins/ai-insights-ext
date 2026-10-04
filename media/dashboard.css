@@ -63,8 +63,45 @@ header {
 .refresh {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 6px;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+}
+.filters label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+select {
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-panel-border));
+  border-radius: 3px;
+  padding: 2px 4px;
+  font: inherit;
+  max-width: 220px;
+}
+.muted {
+  color: var(--vscode-descriptionForeground);
+  font-weight: normal;
+  font-size: 0.85em;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 .refresh .ts {
   font-size: 0.78em;
@@ -80,6 +117,30 @@ button {
 }
 button:hover {
   background: var(--vscode-button-hoverBackground);
+}
+button:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+button.secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+button.secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+button.link {
+  background: transparent;
+  color: var(--vscode-textLink-foreground);
+  padding: 0 2px;
+  font: inherit;
+}
+button.link:hover {
+  background: transparent;
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+  text-decoration: underline;
 }
 
 section {
@@ -122,12 +183,47 @@ section h3 {
   padding: 1px 5px;
   color: var(--vscode-descriptionForeground);
 }
-.fcat {
-  font-size: 0.72em;
+details.group {
+  margin-bottom: 8px;
+}
+details.group > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 2px;
+  font-weight: 600;
+  list-style: none;
+}
+details.group > summary::-webkit-details-marker {
+  display: none;
+}
+details.group > summary::before {
+  content: "▸";
   color: var(--vscode-descriptionForeground);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  padding: 1px 5px;
+  width: 0.8em;
+}
+details.group[open] > summary::before {
+  content: "▾";
+}
+details.group > summary .gname {
+  flex: 1;
+}
+details.group > summary .gcount {
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-descriptionForeground);
+}
+details.group > .finding:first-of-type {
+  margin-top: 4px;
+}
+button.more {
+  margin: 0 0 4px 4px;
+}
+.dismissed {
+  margin-top: 8px;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
 }
 .ftitle {
   font-weight: 600;
@@ -154,14 +250,14 @@ section h3 {
   font-size: 0.8em;
   color: var(--vscode-descriptionForeground);
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   justify-content: space-between;
 }
-.open {
-  cursor: pointer;
-  color: var(--vscode-textLink-foreground);
-}
-.open:hover {
-  text-decoration: underline;
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
 }
 
 section.regressions {
@@ -276,10 +372,33 @@ table.sessions td {
   border-bottom: 1px solid var(--vscode-panel-border);
 }
 table.sessions td.proj {
-  max-width: 140px;
+  max-width: 0; /* let the name column absorb the remaining width and ellipsize */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+table.sessions .sname,
+table.sessions .ssub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+table.sessions .ssub {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+}
+table.sessions th,
+table.sessions td.num {
+  white-space: nowrap;
+}
+table.sessions td.proj {
+  width: 100%;
+}
+button.sname-link {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
 }
 canvas {
   max-width: 100%;

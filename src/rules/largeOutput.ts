@@ -14,9 +14,16 @@ import { classifySearch } from "./searches";
 
 const REASONABLE_CAP_TOKENS = 2000;
 
-/** Whether the command already bounds its own output. */
-function hasLimiter(command: string): boolean {
-  return /\|\s*(head|tail)\b/.test(command) || /\bwc\b/.test(command) || /--stat\b/.test(command) || /\|\s*head\b/.test(command);
+/**
+ * Whether the command already bounds or filters its own output: a pipe into a
+ * filter/summarizer, or a flag that limits or condenses what is printed.
+ */
+const PIPE_LIMITER = /\|\s*(head|tail|grep|egrep|rg|jq|wc|less|more|uniq|cut|awk|sed\s+-n|sort\s+-u)\b/;
+const FLAG_LIMITER =
+  /(--stat|--shortstat|--numstat|--name-only|--name-status|--oneline|--max-count|--quiet|--silent)\b|(^|\s)(-n|-m)\s*\d+\b|(^|\s)-\d+\b|(^|\s)-q\b/;
+
+export function hasLimiter(command: string): boolean {
+  return PIPE_LIMITER.test(command) || FLAG_LIMITER.test(command) || /^\s*(head|tail|wc)\b/.test(command);
 }
 
 export function largeOutputRule(ctx: RuleContext): Finding[] {
@@ -37,7 +44,7 @@ export function largeOutputRule(ctx: RuleContext): Finding[] {
       if (chars < ctx.config.largeSearchOutputBytes || hasLimiter(call.command)) {
         continue;
       }
-      const estTokens = estTokensFromChars(chars);
+      const estTokens = estTokensFromChars(chars, s.charsPerToken);
       const excess = Math.max(0, estTokens - REASONABLE_CAP_TOKENS);
       if (excess <= 0) {
         continue;
@@ -46,6 +53,7 @@ export function largeOutputRule(ctx: RuleContext): Finding[] {
       const short = call.command.length > 100 ? call.command.slice(0, 97) + "…" : call.command;
       findings.push({
         ruleId: "largeoutput",
+        key: `largeoutput|${s.sessionId}|${call.id}`,
         category: "Large command output",
         title: `Command dumped ~${estTokens.toLocaleString("en-US")} tokens into context`,
         detail:
@@ -68,6 +76,7 @@ export function largeOutputRule(ctx: RuleContext): Finding[] {
   if (flagged >= 5) {
     findings.push({
       ruleId: "largeoutput.habit",
+      key: "largeoutput.habit",
       category: "Large command output",
       title: `Frequent uncapped command output (${flagged} flagged)`,
       detail: "Commands routinely dump large output into context without a limiter.",
