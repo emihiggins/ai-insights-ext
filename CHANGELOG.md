@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1
+
+Pricing refresh (checked 2026-10-22).
+
+- **Claude Haiku 5.5** is priced at $0.10/$0.50, rising to $0.50/$2.50 for requests whose prompt (input + cache reads + cache writes) exceeds 100k tokens; the tier is chosen per turn. It was previously billed at the Haiku family fallback ($1/$5), about 10x too high, and its context window is now 1M.
+- **Sonnet 5.5 cache reads** are $0.10/MTok (0.05x input), down from the assumed $0.20.
+- **Opus 4.8 fast mode** turns are billed at $10/$50; they were priced at standard rates, so the fast-mode finding missed them.
+- **US-only inference** (`usage.inference_geo: "us"`) is billed at 1.1x.
+
 ## 0.2.0
 
 Accuracy fixes — token and cost figures were overstated by roughly 2x.

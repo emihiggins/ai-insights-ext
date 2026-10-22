@@ -8,6 +8,7 @@ export interface UsageInput {
   eph5m?: number;
   eph1h?: number;
   speed?: string;
+  inferenceGeo?: string;
 }
 
 let seq = 0;
@@ -55,6 +56,7 @@ export function assistantLine(opts: {
           ephemeral_1h_input_tokens: u.eph1h ?? 0,
         },
         ...(u.speed ? { speed: u.speed } : {}),
+        ...(u.inferenceGeo ? { inference_geo: u.inferenceGeo } : {}),
       },
     },
   });

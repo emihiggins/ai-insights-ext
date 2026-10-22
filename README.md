@@ -76,7 +76,7 @@ Click a session's name in the *most expensive sessions* table (or **Details** on
 
 ## Cost model
 
-Costs are **estimates** (Claude Code's local stats report `costUSD: 0`) at first-party API rates, priced per turn at the model that turn used — e.g. per 1M tokens, Opus 5.5 $4/$20, Sonnet 5.5 $2/$10, Fable 5.1 $10/$50, Haiku 4.5 $1/$5. Cache reads use each model's own price (0.1× input on most models, lower on Fable 5.1 and Opus 5.5); cache writes bill at 1.25× (5-min TTL) / 2× (1-hour TTL); fast-mode turns bill at fast-mode rates. If you're on a Pro/Max subscription, read these as API-equivalent cost. The full table, with the date it was last checked, is in `src/pricing.ts`.
+Costs are **estimates** (Claude Code's local stats report `costUSD: 0`) at first-party API rates, priced per turn at the model that turn used — e.g. per 1M tokens, Opus 5.5 $4/$20, Sonnet 5.5 $2/$10, Fable 5.1 $10/$50, Haiku 5.5 $0.10/$0.50 (rising to $0.50/$2.50 for prompts over 100k tokens). Cache reads use each model's own price (0.1× input on most models, lower on Fable 5.1, Opus 5.5 and Sonnet 5.5); cache writes bill at 1.25× (5-min TTL) / 2× (1-hour TTL); fast-mode turns bill at fast-mode rates, and US-only inference turns at 1.1×. If you're on a Pro/Max subscription, read these as API-equivalent cost. The full table, with the date it was last checked, is in `src/pricing.ts`.
 
 ## Install
 
@@ -99,7 +99,7 @@ Reload VS Code and open the **CC Token Optimizer** view in the Activity Bar. (Yo
 ```bash
 npm install
 npm run build       # bundles the extension host + webview (esbuild)
-npm test            # typecheck + unit tests (88 tests across parser/model/pricing/rules/trends/detail/discovery/service/names)
+npm test            # typecheck + unit tests (91 tests across parser/model/pricing/rules/trends/detail/discovery/service/names)
 npm run package     # build a .vsix (runs the minified prepublish build)
 ```
 

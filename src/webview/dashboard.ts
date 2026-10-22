@@ -217,7 +217,7 @@ function render(payload: DashboardPayload): void {
         <span title="Uncached input">in ${fmt(a.totals.input)}</span>
         <span title="Output">out ${fmt(a.totals.output)}</span>
         <span title="Cache writes (1.25x input for 5-min TTL, 2x for 1-hour)">cache-write ${fmt(a.totals.cacheCreate)}</span>
-        <span title="Cache reads (~0.1x input; less on Fable 5.1 / Opus 5.5)">cache-read ${fmt(a.totals.cacheRead)}</span>
+        <span title="Cache reads (~0.1x input; less on Fable 5.1 / Opus 5.5 / Sonnet 5.5)">cache-read ${fmt(a.totals.cacheRead)}</span>
       </div>`
       }
       <div class="refresh">

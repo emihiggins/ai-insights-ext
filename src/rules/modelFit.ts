@@ -15,7 +15,7 @@
 import type { Finding, RuleContext } from "./index";
 import type { SessionModel } from "../model";
 import { primaryModel } from "../model";
-import { estimateCost, normalizeModelId, rateForModel, turnCost } from "../pricing";
+import { normalizeModelId, turnCost } from "../pricing";
 
 const RECENT_DAYS = 30;
 const TARGET_MODEL = "claude-opus-5-5";
@@ -40,8 +40,7 @@ function savingsAtTarget(s: SessionModel, match: (modelId: string) => boolean): 
     if (!t.model || !match(t.model)) {
       continue;
     }
-    const target = rateForModel(TARGET_MODEL, t.speed);
-    saved += turnCost(t) - estimateCost(t.usage, target);
+    saved += turnCost(t) - turnCost({ ...t, model: TARGET_MODEL });
   }
   return Math.max(0, saved);
 }
