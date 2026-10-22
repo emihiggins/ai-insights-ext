@@ -21,6 +21,8 @@ export interface Usage {
   };
   /** "standard" or "fast" — fast mode bills at premium rates. */
   speed?: string;
+  /** Where inference ran ("us", "global", "not_available") — "us" bills at 1.1x. */
+  inference_geo?: string;
   // `iterations[]` intentionally ignored — it restates the same totals.
 }
 

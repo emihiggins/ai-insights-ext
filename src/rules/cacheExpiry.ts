@@ -10,7 +10,7 @@
  * Math: wasted ≈ the re-written tokens priced as a write minus as a read.
  */
 import type { Finding, RuleContext } from "./index";
-import { rateForModel, CACHE_WRITE_5M_MULTIPLIER, CACHE_WRITE_1H_MULTIPLIER } from "../pricing";
+import { rateForTurn, CACHE_WRITE_5M_MULTIPLIER, CACHE_WRITE_1H_MULTIPLIER } from "../pricing";
 
 const FIVE_MINUTES_MS = 5 * 60_000;
 const ONE_HOUR_MS = 60 * 60_000;
@@ -62,7 +62,7 @@ export function cacheExpiryRule(ctx: RuleContext): Finding[] {
       if (compactionTimes.some((t) => t > from && t <= to)) {
         continue;
       }
-      const rate = rateForModel(cur.model, cur.speed);
+      const rate = rateForTurn(cur);
       const write1h = Math.min(u.ephemeral1h, u.cacheCreate);
       const write5m = u.cacheCreate - write1h;
       const premium =

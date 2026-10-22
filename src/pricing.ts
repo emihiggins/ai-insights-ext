@@ -1,8 +1,9 @@
 /**
  * Cost estimation. Prices are per 1M tokens (USD), first-party API rates.
  * Cache reads have their own per-model price (0.1x input on most models, lower
- * on Fable 5.1 / Opus 5.5); cache writes bill at 1.25x input (5-min TTL) or
- * 2x input (1-hour TTL) on every model.
+ * on Fable 5.1 / Opus 5.5 / Sonnet 5.5); cache writes bill at 1.25x input
+ * (5-min TTL) or 2x input (1-hour TTL) on every model. Haiku 5.5 prices by
+ * prompt length, and US-only inference adds 1.1x — both resolved per turn.
  *
  * These are estimates — the local stats-cache reports costUSD:0, so we compute
  * our own. Keyed by model-id prefix so dated snapshots resolve too.
@@ -19,7 +20,7 @@ export interface Rate {
 }
 
 /** Date the rate table below was last checked against published pricing. */
-export const PRICING_AS_OF = "2026-09-25";
+export const PRICING_AS_OF = "2026-10-22";
 
 export const CACHE_WRITE_5M_MULTIPLIER = 1.25;
 export const CACHE_WRITE_1H_MULTIPLIER = 2.0;
@@ -52,24 +53,40 @@ const RATE_TABLE: Array<[prefix: string, rate: Rate]> = [
   ["claude-3-opus", rate(15, 75)],
   ["claude-opus", rate(4, 20, 0.2)],
   // Sonnet
-  ["claude-sonnet-5-5", rate(2, 10)],
+  ["claude-sonnet-5-5", rate(2, 10, 0.1)],
   ["claude-sonnet-5", rate(2, 10)],
   ["claude-sonnet-4", rate(3, 15)], // Sonnet 4 / 4.5 / 4.6
   ["claude-3-7-sonnet", rate(3, 15)],
   ["claude-3-5-sonnet", rate(3, 15)],
-  ["claude-sonnet", rate(2, 10)],
-  // Haiku
+  ["claude-sonnet", rate(2, 10, 0.1)],
+  // Haiku (Haiku 5.5's long-prompt tier is in LONG_PROMPT_TABLE)
+  ["claude-haiku-5-5", rate(0.1, 0.5)],
   ["claude-haiku-4-5", rate(1, 5)],
   ["claude-3-5-haiku", rate(0.8, 4)],
   ["claude-3-haiku", rate(0.25, 1.25)],
-  ["claude-haiku", rate(1, 5)],
+  ["claude-haiku", rate(0.1, 0.5)],
 ];
 
 /** Fast mode (`usage.speed === "fast"`) runs the same model at premium rates. */
 const FAST_RATE_TABLE: Array<[prefix: string, rate: Rate]> = [
   ["claude-opus-5-5", rate(8, 40, 0.4)],
   ["claude-opus-5", rate(10, 50)],
+  ["claude-opus-4-8", rate(10, 50)],
 ];
+
+/**
+ * Models priced by prompt length: a request whose prompt (input + cache reads
+ * + cache writes) exceeds `threshold` tokens bills every category at `rate`.
+ * Keyed by the exact RATE_TABLE prefix the base rate resolved from, so the
+ * `claude-haiku` family fallback doesn't leak onto Haiku 4.5.
+ */
+const LONG_PROMPT_TIERS = new Map<string, { threshold: number; rate: Rate }>([
+  ["claude-haiku-5-5", { threshold: 100_000, rate: rate(0.5, 2.5) }],
+  ["claude-haiku", { threshold: 100_000, rate: rate(0.5, 2.5) }],
+]);
+
+/** US-only inference (`usage.inference_geo === "us"`) bills all categories at 1.1x. */
+export const US_INFERENCE_MULTIPLIER = 1.1;
 
 const DEFAULT_RATE: Rate = rate(5, 25);
 
@@ -83,16 +100,18 @@ export function normalizeModelId(modelId: string): string {
   return bare.split("@")[0];
 }
 
-function longestPrefix<T>(table: Array<[string, T]>, modelId: string): T | undefined {
-  let best: T | undefined;
-  let bestLen = -1;
-  for (const [prefix, value] of table) {
-    if (modelId.startsWith(prefix) && prefix.length > bestLen) {
-      best = value;
-      bestLen = prefix.length;
+function longestPrefixEntry<T>(table: Array<[string, T]>, modelId: string): [string, T] | undefined {
+  let best: [string, T] | undefined;
+  for (const entry of table) {
+    if (modelId.startsWith(entry[0]) && entry[0].length > (best?.[0].length ?? -1)) {
+      best = entry;
     }
   }
   return best;
+}
+
+function longestPrefix<T>(table: Array<[string, T]>, modelId: string): T | undefined {
+  return longestPrefixEntry(table, modelId)?.[1];
 }
 
 export function rateForModel(modelId: string | undefined, speed?: string): Rate {
@@ -107,6 +126,31 @@ export function rateForModel(modelId: string | undefined, speed?: string): Rate 
     }
   }
   return longestPrefix(RATE_TABLE, id) ?? DEFAULT_RATE;
+}
+
+function scaleRate(r: Rate, factor: number): Rate {
+  return { input: r.input * factor, output: r.output * factor, cacheRead: r.cacheRead * factor };
+}
+
+/**
+ * The rate one turn actually billed at: model and speed, plus the prompt-length
+ * tier (Haiku 5.5) and the US-only inference multiplier. A turn is one API
+ * request, which is the unit both modifiers are applied to.
+ */
+export function rateForTurn(turn: Turn): Rate {
+  let r = rateForModel(turn.model, turn.speed);
+  if (turn.model && turn.speed !== "fast") {
+    const base = longestPrefixEntry(RATE_TABLE, normalizeModelId(turn.model));
+    const tier = base && LONG_PROMPT_TIERS.get(base[0]);
+    const u = turn.usage;
+    if (tier && u.input + u.cacheRead + u.cacheCreate > tier.threshold) {
+      r = tier.rate;
+    }
+  }
+  if (turn.inferenceGeo === "us") {
+    r = scaleRate(r, US_INFERENCE_MULTIPLIER);
+  }
+  return r;
 }
 
 const PER_TOKEN = 1_000_000;
@@ -135,9 +179,9 @@ export function costOfInputTokens(tokens: number, rate: Rate): number {
   return (tokens / PER_TOKEN) * rate.input;
 }
 
-/** Cost of one turn, priced at the model and speed that turn actually used. */
+/** Cost of one turn, priced at the rate that turn actually billed at. */
 export function turnCost(turn: Turn): number {
-  return estimateCost(turn.usage, rateForModel(turn.model, turn.speed));
+  return estimateCost(turn.usage, rateForTurn(turn));
 }
 
 /** Session cost as the sum of per-turn costs, so mid-session model switches price correctly. */
@@ -147,7 +191,8 @@ export function sessionCost(session: SessionModel): number {
 
 /** Context window (tokens) by model-id prefix, longest match wins. */
 const CONTEXT_WINDOW: Array<[prefix: string, tokens: number]> = [
-  ["claude-haiku", 200_000],
+  ["claude-haiku", 1_000_000],
+  ["claude-haiku-4", 200_000],
   ["claude-opus", 1_000_000],
   ["claude-opus-4", 200_000],
   ["claude-opus-4-6", 1_000_000],

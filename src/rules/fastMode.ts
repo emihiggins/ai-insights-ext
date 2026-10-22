@@ -7,7 +7,7 @@
  * Math: the premium over the same turns at standard rates.
  */
 import type { Finding, RuleContext } from "./index";
-import { estimateCost, rateForModel, turnCost } from "../pricing";
+import { turnCost } from "../pricing";
 
 export function fastModeRule(ctx: RuleContext): Finding[] {
   let fastTurns = 0;
@@ -19,7 +19,7 @@ export function fastModeRule(ctx: RuleContext): Finding[] {
       if (t.speed !== "fast") {
         continue;
       }
-      const extra = turnCost(t) - estimateCost(t.usage, rateForModel(t.model));
+      const extra = turnCost(t) - turnCost({ ...t, speed: "standard" });
       if (extra <= 0) {
         continue; // no fast pricing known for this model
       }

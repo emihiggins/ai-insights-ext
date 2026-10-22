@@ -31,6 +31,8 @@ export interface Turn {
   model?: string;
   /** "standard" or "fast", from usage.speed. */
   speed?: string;
+  /** From usage.inference_geo; "us" (US-only inference) bills at 1.1x. */
+  inferenceGeo?: string;
   usage: TokenTotals;
 }
 
@@ -227,6 +229,7 @@ export function buildSessionModel(
               timestamp: a.timestamp,
               model: modelId,
               speed: a.message?.usage?.speed,
+              inferenceGeo: a.message?.usage?.inference_geo,
               usage,
             };
             model.turns.push(turn);
